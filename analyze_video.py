@@ -343,12 +343,12 @@ def fh_find_ft(frameList, feedback, analysis):
                 frameList = frameList[frameList.index(frame):]
                 return frameList, feedback, analysis, True
     return frameList, feedback, analysis, False
-#
-# video_path = (r'C:\Users\shahv\PycharmProjects\kivy-app\media\bh_ex_3shots (2).mov')
-#
-# analyze_video(video_path, type='bh', number_of_shots=3)
-#
-#
+
+video_path = (r'C:\Users\shahv\PycharmProjects\kivy-app\media\bh_ex_3shots (2).mov')
+
+analyze_video(video_path, type='bh', number_of_shots=3)
+
+
 
 
 # # else:
