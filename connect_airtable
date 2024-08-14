@@ -1,0 +1,36 @@
+import requests
+
+def airtable(data):
+    # Set your Airtable API key, Base ID, and Table Name
+    AIRTABLE_API_KEY = 'patvjrxXeFNcCcErQ.57e1fbddffd7913987a005a80d754113984f8f72135c28374c8d5a4fee6e9c06'
+    BASE_ID = 'appXmwEZrk0G2NdG0'
+    TABLE_NAME = 'tbllrKcfUQCGxZaXB'
+
+    # Airtable API endpoint
+    url = f"https://api.airtable.com/v0/{BASE_ID}/{TABLE_NAME}"
+
+    # Headers for the request
+    headers = {
+        "Authorization": f"Bearer {AIRTABLE_API_KEY}",
+        "Content-Type": "application/json"
+    }
+
+    # Data to be added (adjust field names and values as per your table)
+    # data = {
+    #     "fields": {
+    #         "UserID": "John Doe",
+    #         "DrillName": "johndoe@example.com",
+    #         "Done": "True"
+    #     }
+    # }
+
+    # Make the request to create the record
+    response = requests.post(url, headers=headers, json=data)
+
+    # Check if the request was successful
+    if response.status_code == 200:
+        print("Record created successfully!")
+        print(response.json())
+    else:
+        print(f"Failed to create record: {response.status_code}")
+        print(response.json())
