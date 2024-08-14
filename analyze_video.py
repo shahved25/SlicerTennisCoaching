@@ -1,3 +1,5 @@
+# Find Body Positions -> Identify Swing Points -> Feedback + Pics
+
 import cv2
 from cvzone.PoseModule import PoseDetector
 from fh_algorithms import *
@@ -12,26 +14,28 @@ def Merge(dict1, dict2):
     res = {**dict1, **dict2}
     return res
 
-def analyze_video(video_path, type, number_of_shots):
-    detector = PoseDetector()
-    frameList = []
-    cap = cv2.VideoCapture(video_path)
-    fps = round(cap.get(cv2.CAP_PROP_FPS))
-    print('FPS: ' + str(fps))
-    frames = []
-    while cap.isOpened():
-        ret, frame = cap.read()
-        if not ret:
-            break
-        img = detector.findPose(frame)
-        lmList, bboxInfo = detector.findPosition(img)
-
-        # Check for person, add lm locations to frame list
-        if bboxInfo:
-            frameList.append((lmList, frame))
-
-    cap.release()
-    t_time = len(frames)
+def analyze_video(frameList, type, number_of_shots):
+    # detector = PoseDetector()
+    # frameList = []
+    # cap = cv2.VideoCapture(video_path)
+    # fps = round(cap.get(cv2.CAP_PROP_FPS))
+    # print('FPS: ' + str(fps))
+    # frames = []
+    # while cap.isOpened():
+    #     ret, frame = cap.read()
+    #     if not ret:
+    #         break
+    #     img = detector.findPose(frame)
+    #     lmList, bboxInfo = detector.findPosition(img)
+    #
+    #     # Check for person, add lm locations to frame list
+    #     if bboxInfo:
+    #         frameList.append((lmList, frame))
+    #
+    # cap.release()
+    fps = 30
+    frameList = frameList[60:]
+    t_time = len(frameList)
     print('Frames: ' + str(t_time))
 
     analysis = {
@@ -39,7 +43,7 @@ def analyze_video(video_path, type, number_of_shots):
         'consistency': 0,
         'swing_speed': 0,
         'restarts': 0,
-        'number_of_frames' : 0
+        'number_of_frames': 0
     }
     frames = {}
     # Main Loop for Forehand
@@ -105,9 +109,9 @@ def analyze_video(video_path, type, number_of_shots):
     # Create Analysis
     # print(analysis['technique_accuracy'])
     # print(analysis['number_of_frames'])
-    analysis['technique_accuracy'] = 100 - (analysis['technique_accuracy']/analysis['number_of_frames'] * 8)
-    analysis['swing_speed'] = (analysis['swing_speed']/(analysis['number_of_frames']/3))/fps
-    analysis['consistency'] = 100 - (analysis['restarts'] * 5)
+    # analysis['technique_accuracy'] = 100 - (analysis['technique_accuracy']/analysis['number_of_frames'] * 8)
+    # analysis['swing_speed'] = (analysis['swing_speed']/(analysis['number_of_frames']/3))/fps
+    # analysis['consistency'] = 100 - (analysis['restarts'] * 5)
     frames = Merge(analysis, frames)
 
     print(json.dumps(
@@ -124,6 +128,8 @@ def analyze_video(video_path, type, number_of_shots):
 def bh_find_tb(frameList, feedback, analysis, fps):
     prev_index = None
     for frame in frameList:
+        if frame is None:
+            continue
         lmList = frame[0]
         tb_frame = frame[1]
         right_index = next((lm for lm in lmList if lm[0] == 20), None)
@@ -161,6 +167,8 @@ def bh_find_tb(frameList, feedback, analysis, fps):
 def bh_find_cp(frameList, feedback, analysis):
     prev_index = None
     for frame in frameList:
+        if frame is None:
+            continue
         lmList = frame[0]
         cp_frame = frame[1]
         right_index = next((lm for lm in lmList if lm[0] == 20), None)
@@ -197,6 +205,8 @@ def bh_find_cp(frameList, feedback, analysis):
 def bh_find_ft(frameList, feedback, analysis):
     prev_index = None
     for frame in frameList:
+        if frame is None:
+            continue
         lmList = frame[0]
         ft_frame = frame[1]
         right_index = next((lm for lm in lmList if lm[0] == 20), None)
@@ -235,15 +245,20 @@ def bh_find_ft(frameList, feedback, analysis):
 
 # Forehand Analysis
 def fh_find_tb(frameList, feedback, analysis, fps):
+    print('Looking for tb')
     prev_index = None
     for frame in frameList:
+        if frame is None:
+            continue
         lmList = frame[0]
         tb_frame = frame[1]
         right_index = next((lm for lm in lmList if lm[0] == 20), None)
         right_hip = next((lm for lm in lmList if lm[0] == 24), None)
         nose = next((lm for lm in lmList if lm[0] == 0), None)
         right_ankle = next((lm for lm in lmList if lm[0] == 28), None)
+
         if right_index and right_hip and right_ankle and nose:
+
             # print(right_hip[1] - right_index[1])
             # print(0.3 * (right_ankle[2] - nose[2]))
             if prev_index == None:
@@ -256,6 +271,8 @@ def fh_find_tb(frameList, feedback, analysis, fps):
 
             # Find Takeback
             if right_hip[1] - right_index[1] > (0.2 * (right_ankle[2] - nose[2])) and direction > 0:
+                print('Found tb')
+
                 tb_list, img = normalize_pose(lmList, (1024, 1024), 1000,
                                                 r'C:\Users\shahv\.vscode\.venv\Scripts\playground2\Solid_white_bordered.svg.png',
                                                 (255, 0, 0))
@@ -274,6 +291,8 @@ def fh_find_tb(frameList, feedback, analysis, fps):
 def fh_find_cp(frameList, feedback, analysis):
     prev_index = None
     for frame in frameList:
+        if frame is None:
+            continue
         lmList = frame[0]
         cp_frame = frame[1]
         right_index = next((lm for lm in lmList if lm[0] == 20), None)
@@ -310,6 +329,8 @@ def fh_find_cp(frameList, feedback, analysis):
 def fh_find_ft(frameList, feedback, analysis):
     prev_index = None
     for frame in frameList:
+        if frame is None:
+            continue
         lmList = frame[0]
         ft_frame = frame[1]
         right_index = next((lm for lm in lmList if lm[0] == 20), None)
@@ -344,9 +365,9 @@ def fh_find_ft(frameList, feedback, analysis):
                 return frameList, feedback, analysis, True
     return frameList, feedback, analysis, False
 
-video_path = (r'C:\Users\shahv\PycharmProjects\kivy-app\media\bh_ex_3shots (2).mov')
+# video_path = (r"C:\Users\shahv\PycharmProjects\Slicer\media\fh_ex.MOV")
 
-analyze_video(video_path, type='bh', number_of_shots=3)
+# analyze_video(video_path, type='fh', number_of_shots=1)
 
 
 
