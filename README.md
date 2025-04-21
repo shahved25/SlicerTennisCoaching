@@ -1,13 +1,13 @@
-# 🎾 Slicer Tennis Feedback API
+# 🎾 Slicer Tennis
 
-This repository powers the **Slicer App**, an AI-driven tennis technique analysis platform. Slicer analyzes uploaded videos of forehand or backhand drills, extracts key swing phases, and provides detailed feedback and metrics — all seamlessly integrated with **Cloudinary** and **Airtable**.
+This repository powers the **Slicer App**, an AI-driven tennis technique analysis platform. Slicer analyzes uploaded videos of forehand or backhand drills, extracts key swing phases, and provides detailed feedback and metrics.
 
 ---
 
 ## 📂 Project Structure
 
 ```bash
-├── app.py                  # Main Flask API endpoint
+├── api.py                  # Main Flask API endpoint
 ├── analyze_video.py        # Core analysis logic for forehand and backhand
 ├── get_frames.py           # Video-to-frame extractor (not shown here)
 ├── connect_airtable.py     # Function to upload results to Airtable (not shown here)
@@ -68,28 +68,6 @@ Analyzes a user-uploaded video.
 ```
 
 ---
-
-## 💻 Setup
-
-### 1. Clone the Repo
-```bash
-git clone https://github.com/your-org/slicer-backend.git
-cd slicer-backend
-```
-
-### 2. Install Dependencies
-```bash
-pip install flask cloudinary cvzone opencv-python
-```
-
-### 3. Set up Cloudinary
-Update `cloudinary.config()` in `app.py` with your Cloudinary credentials.
-
-### 4. Set up Airtable
-Ensure `connect_airtable.py` has a method called `airtable(data)` to upload the results. Configure your API keys and Base IDs.
-
----
-
 ## 🧠 How it Works (Behind the Scenes)
 
 1. Video is parsed into frames (every 1/30th second).
@@ -113,15 +91,3 @@ Ensure `connect_airtable.py` has a method called `airtable(data)` to upload the 
 | `Restarts`          | How often 3+ seconds passed before resuming swing |
 
 ---
-
-## ✅ To-Do / Roadmap
-
-- [ ] Add real-time camera input support
-- [ ] Integrate feedback visualization into the app
-- [ ] Train ML model for higher accuracy instead of heuristics
-
----
-
-## 🤝 Contributions
-
-This project is part of a broader initiative to enhance amateur tennis training using computer vision and feedback loops. PRs, ideas, and collaborations welcome!
