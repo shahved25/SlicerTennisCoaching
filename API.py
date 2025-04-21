@@ -3,7 +3,7 @@
 from flask import Flask, request, jsonify
 from analyze_video import *
 from connect_airtable import *
-from get_frames_test import *
+from get_frames import *
 import json
 import cloudinary
 import cloudinary.uploader
