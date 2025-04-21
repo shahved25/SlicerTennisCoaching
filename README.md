@@ -1,38 +1,45 @@
 # 🎾 Slicer Tennis Feedback API
-This repository powers the Slicer App, an AI-driven tennis technique analysis platform. Slicer analyzes uploaded videos of forehand or backhand drills, extracts key swing phases, and provides detailed feedback and metrics — all seamlessly integrated with Cloudinary and Airtable.
 
-# Project Structure
-├── app.py                  Main Flask API endpoint
+This repository powers the **Slicer App**, an AI-driven tennis technique analysis platform. Slicer analyzes uploaded videos of forehand or backhand drills, extracts key swing phases, and provides detailed feedback and metrics — all seamlessly integrated with **Cloudinary** and **Airtable**.
 
-├── analyze_video.py        Core analysis logic for forehand and backhand
+---
 
-├── get_frames.py           Video-to-frame extractor (not shown here)
+## 📂 Project Structure
 
+```bash
+├── app.py                  # Main Flask API endpoint
+├── analyze_video.py        # Core analysis logic for forehand and backhand
+├── get_frames.py           # Video-to-frame extractor (not shown here)
 ├── connect_airtable.py     # Function to upload results to Airtable (not shown here)
-
 ├── fh_algorithms.py        # Forehand-specific feedback algorithms
-
 ├── bh_algorithms.py        # Backhand-specific feedback algorithms
-
 ├── normalize_points.py     # Normalization for pose keypoints
+```
 
-# Features
-- Video Upload & Frame Extraction: Extracts frames from a provided AWS S3 video URL.
-- Pose Detection: Identifies critical body landmarks using cvzone.PoseModule.
-- Swing Phase Detection:
-  - Detects Takeback, Contact Point, and Follow Through for each swing.
-- Feedback Generation:
-- Classifies movements (e.g. "Looks good!" or errors).
-- Calculates technique accuracy, swing speed, and consistency.
-- Image Uploads: Annotated frames uploaded to Cloudinary.
-- Data Storage: Analysis results pushed to Airtable.
+---
 
-# API Endpoint
-POST /slicer/analyze
+## 🔧 Features
+
+- **Video Upload & Frame Extraction**: Extracts frames from a provided AWS S3 video URL.
+- **Pose Detection**: Identifies critical body landmarks using `cvzone.PoseModule`.
+- **Swing Phase Detection**:
+  - Detects **Takeback**, **Contact Point**, and **Follow Through** for each swing.
+- **Feedback Generation**:
+  - Classifies movements (e.g. "Looks good!" or errors).
+  - Calculates technique accuracy, swing speed, and consistency.
+- **Image Uploads**: Annotated frames uploaded to **Cloudinary**.
+- **Data Storage**: Analysis results pushed to **Airtable**.
+
+---
+
+## 🔌 API Endpoint
+
+### `POST /slicer/analyze`
+
 Analyzes a user-uploaded video.
 
-INPUT JSON 
-
+#### 📥 Input (JSON)
+```json
 {
   "ShortDescription": "10 FH",
   "Video": "https://your-s3-link.com/video.mp4",
@@ -40,9 +47,10 @@ INPUT JSON
   "When": "2025-04-21",
   "DrillName": "Baseline Rally"
 }
+```
 
-OUTPUT JSON
-
+#### 📤 Output (JSON)
+```json
 {
   "fields": {
     "Timestamp": "4/21 3:45pm",
@@ -57,14 +65,63 @@ OUTPUT JSON
     "When": "2025-04-21"
   }
 }
+```
 
-# How it Works (Behind the Scenes)
-1. JSON containing the video + context is recieved by the API
-2. Frames are extracted from video URL
-4. In analyze_video, body position joints are identified and then Takeback, Contact point, Follow through parts of the tennis swing are identified.
-5. In fh_algorithms or bh_algorithms, the body position joints are analyzed to extract feedback.
-6. Data is sent back to an AirTable database that connects to the frontend
+---
 
+## 💻 Setup
 
-![Screen Shot 2025-04-21 at 12 25 55 PM](https://github.com/user-attachments/assets/0144d00b-9bb1-4e6f-a36d-18885eadc0bf)
+### 1. Clone the Repo
+```bash
+git clone https://github.com/your-org/slicer-backend.git
+cd slicer-backend
+```
 
+### 2. Install Dependencies
+```bash
+pip install flask cloudinary cvzone opencv-python
+```
+
+### 3. Set up Cloudinary
+Update `cloudinary.config()` in `app.py` with your Cloudinary credentials.
+
+### 4. Set up Airtable
+Ensure `connect_airtable.py` has a method called `airtable(data)` to upload the results. Configure your API keys and Base IDs.
+
+---
+
+## 🧠 How it Works (Behind the Scenes)
+
+1. Video is parsed into frames (every 1/30th second).
+2. Body keypoints are extracted using `cvzone.PoseModule`.
+3. For each swing, the code looks for:
+   - **Takeback**: Arm behind body
+   - **Contact Point**: Arm extended in front of hip
+   - **Follow Through**: Arm across the body or shoulder height
+4. Feedback for each phase is generated using posture heuristics from `fh_algorithms.py` or `bh_algorithms.py`.
+5. Annotated frames are uploaded to Cloudinary, while stats are logged in Airtable.
+
+---
+
+## 📈 Metrics Tracked
+
+| Metric             | Description |
+|--------------------|-------------|
+| `TechniqueAccuracy` | % of body parts in correct positions |
+| `Consistency`       | Penalized for restart delays |
+| `SwingSpeed`        | Frame difference between takeback and follow-through |
+| `Restarts`          | How often 3+ seconds passed before resuming swing |
+
+---
+
+## ✅ To-Do / Roadmap
+
+- [ ] Add real-time camera input support
+- [ ] Integrate feedback visualization into the app
+- [ ] Train ML model for higher accuracy instead of heuristics
+
+---
+
+## 🤝 Contributions
+
+This project is part of a broader initiative to enhance amateur tennis training using computer vision and feedback loops. PRs, ideas, and collaborations welcome!
