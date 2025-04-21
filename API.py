@@ -1,74 +1,89 @@
-from flask import Flask, request, jsonify
-# from analyze_video import *
-from connect_airtable import *
-from get_frames import *
+# This is the main Flask API.
 
+from flask import Flask, request, jsonify
+from analyze_video import *
+from connect_airtable import *
+from get_frames_test import *
 import json
+import cloudinary
+import cloudinary.uploader
+from cloudinary.utils import cloudinary_url
+import datetime
+from collections import Counter
+
+# Cloudinary Configuration for Image Storage
+cloudinary.config(
+    cloud_name = "djqozkboz",
+    api_key = "146155129725499",
+    api_secret = "v2vfZ5Liie_NetZ1yig6IFgCO8I", 
+    secure=True
+)
 
 app = Flask(__name__)
 
-@app.route('/slicer/analyze_backhand', methods=['POST'])
-def analyze_backhand():
+# Routing for all requests
+@app.route('/slicer/analyze', methods=['POST'])
+def analyze():
     print('REQUEST ANALYZE')
+    # Receive Data
     data = request.json
-    # Find info
     shortDescription = data.get('ShortDescription')
-    video_url = data.get('Video')
-    print("VIDEO:")
-    print(video_url)
+    video_url = str(data.get('Video'))
+    userid = data.get('UserID')
+    when = data.get('When')
     drillName = data.get('DrillName')
-    number_of_shots = ""
-    for i in shortDescription:
-        if i in '1234567890':
-            number_of_shots += i
-        else:
-            break
-    if number_of_shots:
-        number_of_shots = int(number_of_shots)
-    if "FH" in shortDescription:
-        type = 'fh'
-    else:
-        type = 'bh'
+    number_of_shots = int(''.join([i for i in shortDescription if i.isdigit()]) or 0)
+    type = 'fh' if "FH" in shortDescription else 'bh'
+    current_time = datetime.datetime.now()
+    hour = current_time.hour - 12 if current_time.hour > 12 else current_time.hour
+    ampm = 'pm' if current_time.hour > 12 else 'am'
+    minutes = current_time.minute if len(str(current_time.minute)) == 2 else '0' + str(current_time.minute)
+    timestamp = f'{current_time.month}/{current_time.day} {hour}:{minutes}{ampm}'
+    print(f"{'User ID:':<20}{userid}")
+    print(f"{'Drill Name:':<20}{drillName}")
+    print(f"{'Short Description:':<20}{shortDescription}")
+    print(f"{'Video URL:':<20}{video_url}")
+    print(f"{'Number of Shots:':<20}{number_of_shots}")
+    print(f"{'Shot Type:':<20}{type}")
+    print(f"{'Timestamp:':<20}{timestamp}")
 
-    print(shortDescription, video_url, drillName, number_of_shots, type)
+    # Get frames from AWS temporary storage file - THIS WILL NEED TO CHANGE BASED ON WHERE THE IMAGE IS COMING FROM
+    if video_url.startswith('https'):
+        frameList = handle_aws_file(video_url)
+        print(f"{'Number of Frames:':<15}{len(frameList)}")
 
-    # Get frames from AWS temporary storage file
-    frameList = handle_aws_file(video_url)
-
-    # Analyze Frames
-    feedback = analyze_video(frameList, type, number_of_shots)
-    print(feedback)
-
-    data = {
-        "fields": {
-            "UserID": "Testing",
-            "DrillName": drillName,
-            "Done": 'True',
-            "ShortDescription": shortDescription,
-            "TechniqueAccuracy": str(feedback["technique_accuracy"]),
-            "Consistency": str(feedback['consistency']),
-            "SwingSpeed": str(feedback['swing_speed']),
-            "Restarts": str(feedback['restarts'])
-
+        # Analyze Frames
+        feedback, pics, analysis = analyze_video(frameList, type, number_of_shots)
+        print(feedback)
+        print(pics)
+        # Save results to Airtable
+        pics = [{"url": pic} for pic in pics]
+        data = {
+            "fields": {
+                "Timestamp": timestamp,
+                "UserID": userid,
+                "DrillName": drillName,
+                "ShortDescription": shortDescription,
+                "TechniqueAccuracy": int(analysis["technique_accuracy"]),
+                "Consistency": int(analysis['consistency']),
+                "SwingSpeed": float(analysis['swing_speed']),
+                "Restarts": int(analysis['restarts']),
+                "Pics": pics,
+                "When": when
+            }
         }
-    }
-    airtable(data)
+        airtable(data)
 
+    else:
+        data = {'error':'video_not_valid'}
     return data, 201
 
-@app.route('/slicer/analyze_forehand', methods=['POST'])
-def analyze_forehand():
+# This is a test request for debugging
+@app.route('/slicer/test', methods=['POST', 'GET'])
+def test():
     data = request.json
-    # feedback = analyze_video(data['video'], data['type'], data['number_of_shots'])
-    # print(json.dumps(
-    #     feedback,
-    #     sort_keys=True,
-    #     indent=4,
-    #     separators=(',', ': ')
-    # ))
-    #print(jsonify(feedback))
-    #return jsonify(feedback), 201
-    # return feedback, 201
+
+    return {"Test Successful":201}
 
 if __name__ == '__main__':
     print("API Trying")
