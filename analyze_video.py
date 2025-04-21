@@ -7,7 +7,6 @@ from fh_algorithms import *
 from bh_algorithms import *
 from normalize_points import normalize_pose
 import json, os, string, random
-from image_process import *
 import cloudinary
 import cloudinary.uploader
 from cloudinary.utils import cloudinary_url
@@ -52,28 +51,30 @@ def analyze_video(frameList, type, number_of_shots):
                 'follow_through': {}
             }
 
+            # Check if the frame represents the "Take Back" step of a tennis swing
             frameList, feedback, analysis, found = fh_find_tb(frameList, feedback, analysis)
             if found == True:
                 analysis['number_of_frames'] = analysis['number_of_frames'] + 1
                 tb_frame_num = len(frameList)
             else:
                 tb_frame_num = False
-            #print('Frames Left: ' + str(len(frameList)))
+                
+            # Check if the frame represents the "Contact Point" step of a tennis swing
             frameList, feedback, analysis, found = fh_find_cp(frameList, feedback, analysis)
-            #print('Frames Left: ' + str(len(frameList)))
-            if found == True:
-                analysis['number_of_frames'] = analysis['number_of_frames'] + 1
-            frameList, feedback, analysis, found = fh_find_ft(frameList, feedback, analysis)
-            #print('Frames Left: ' + str(len(frameList)))
             if found == True:
                 analysis['number_of_frames'] = analysis['number_of_frames'] + 1
 
-            # Add Swing Speed
+            # Check if the frame represents the "Follow Through" step of a tennis swing
+            frameList, feedback, analysis, found = fh_find_ft(frameList, feedback, analysis)
+            if found == True:
+                analysis['number_of_frames'] = analysis['number_of_frames'] + 1
+
+            # Record the Swing Speed
             if tb_frame_num != False:
                 analysis['swing_speed'] = analysis['swing_speed'] + (tb_frame_num - len(frameList))
             frames['Swing ' + str(i)] = feedback
 
-    # Main Loop for Forehand
+    # Main Loop for Backhand
     if type == 'bh':
         for i in range(number_of_shots):
             feedback = {
@@ -81,25 +82,25 @@ def analyze_video(frameList, type, number_of_shots):
                 'contact_point': {},
                 'follow_through': {}
             }
-
+            # Check if the frame represents the "Take Back" step of a tennis swing
             frameList, feedback, analysis, found = bh_find_tb(frameList, feedback, analysis)
             if found == True:
                 analysis['number_of_frames'] = analysis['number_of_frames'] + 1
                 tb_frame_num = len(frameList)
             else:
                 tb_frame_num = False
-            #print('Frames Left: ' + str(len(frameList)))
+                
+            # Check if the frame represents the "Contact Point" step of a tennis swing
             frameList, feedback, analysis, found = bh_find_cp(frameList, feedback, analysis)
-            #print('Frames Left: ' + str(len(frameList)))
-            if found == True:
-                analysis['number_of_frames'] = analysis['number_of_frames'] + 1
-            frameList, feedback, analysis, found = bh_find_ft(frameList, feedback, analysis)
-            #
-            #print('Frames Left: ' + str(len(frameList)))
             if found == True:
                 analysis['number_of_frames'] = analysis['number_of_frames'] + 1
 
-            # Add Swing Speed
+            # Check if the frame represents the "Follow Through" step of a tennis swing
+            frameList, feedback, analysis, found = bh_find_ft(frameList, feedback, analysis)
+            if found == True:
+                analysis['number_of_frames'] = analysis['number_of_frames'] + 1
+
+            # Record the Swing Speed
             if tb_frame_num != False:
                 analysis['swing_speed'] = analysis['swing_speed'] + (tb_frame_num - len(frameList))
             else:
@@ -137,44 +138,6 @@ def analyze_video(frameList, type, number_of_shots):
 
 
 # Backhand Analysis
-def bh_find_tb_old(frameList, feedback, analysis, fps):
-    prev_index = None
-    for frame in frameList:
-        if frame is None:
-            continue
-        lmList = frame[0]
-        tb_frame = frame[1]
-        right_index = next((lm for lm in lmList if lm[0] == 20), None)
-        left_hip = next((lm for lm in lmList if lm[0] == 23), None)
-        nose = next((lm for lm in lmList if lm[0] == 0), None)
-        right_ankle = next((lm for lm in lmList if lm[0] == 28), None)
-        if right_index and left_hip and right_ankle and nose:
-            # print(right_hip[1] - right_index[1])
-            # print(0.3 * (right_ankle[2] - nose[2]))
-            if prev_index == None:
-                prev_index = right_index[1]
-                # print(prev_index)
-                direction = -1
-            else:
-                direction = right_index[1] - prev_index
-                prev_index = right_index[1]
-
-            # Find Takeback
-            if right_index[1] - left_hip[1] > (0.2 * (right_ankle[2] - nose[2])) and direction > 0:
-                tb_list, img = normalize_pose(lmList, (1024, 1024), 1000,
-                                                r'C:\Users\shahv\.vscode\.venv\Scripts\playground2\Solid_white_bordered.svg.png',
-                                                (255, 0, 0))
-                # Analyze take back frame and give feedback
-                arrow, feedback = bh_check_take_back(tb_list, lmList, feedback)
-                tb_frame = bh_draw_outline(tb_frame, arrow)
-                cv2.imwrite('take_back.jpg', tb_frame)
-                #print(feedback)
-                newframeList = frameList[frameList.index(frame):]
-                if (len(frameList) - len(newframeList))/fps > 3:
-                    analysis['restarts'] += 1
-                return newframeList, feedback, analysis, True
-    return frameList, feedback, analysis, False
-
 def bh_find_tb(frameList, feedback, analysis):
     print('Looking for Takeback')
     prev_index = None
@@ -396,6 +359,7 @@ def fh_find_ft(frameList, feedback, analysis):
                 return frameList, feedback, analysis, True
     return frameList, feedback, analysis, False
 
-# video_path = (r"C:\Users\shahv\PycharmProjects\Slicer\media\fh_ex.MOV")
 
+# Testing
+# video_path = (r"C:\Users\shahv\PycharmProjects\Slicer\media\fh_ex.MOV")
 # analyze_video(video_path, type='fh', number_of_shots=1)
