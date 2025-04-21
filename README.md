@@ -69,15 +69,11 @@ Analyzes a user-uploaded video.
 
 ---
 ## 🧠 How it Works (Behind the Scenes)
-
-1. Video is parsed into frames (every 1/30th second).
-2. Body keypoints are extracted using `cvzone.PoseModule`.
-3. For each swing, the code looks for:
-   - **Takeback**: Arm behind body
-   - **Contact Point**: Arm extended in front of hip
-   - **Follow Through**: Arm across the body or shoulder height
-4. Feedback for each phase is generated using posture heuristics from `fh_algorithms.py` or `bh_algorithms.py`.
-5. Annotated frames are uploaded to Cloudinary, while stats are logged in Airtable.
+1. JSON containing the video + context is recieved by the API
+2. Frames are extracted from video URL
+4. In analyze_video, body position joints are identified and then Takeback, Contact point, Follow through parts of the tennis swing are identified.
+5. In fh_algorithms or bh_algorithms, the body position joints are analyzed to extract feedback.
+6. Data is sent back to an AirTable database that connects to the frontend
 
 ---
 
